@@ -1,0 +1,29 @@
+{
+  "name": "TechniLux Apps",
+  "description": "Community DNS apps for TechniLux UI - Enhanced DNS server applications",
+  "url": "https://github.com/elabx-org/technilux-apps",
+  "apps": [
+    {
+      "name": "Advanced Blocking Plus",
+      "description": "Enhanced version of Advanced Blocking with all original features PLUS support for assigning MULTIPLE groups to each client IP address or subnet. Allows rules from different groups to be aggregated for the same client.",
+      "version": "1.0.1",
+      "author": "TechniLux",
+      "url": "https://github.com/elabx-org/technilux-apps",
+      "size": "21 KB",
+      "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.1/AdvancedBlockingPlus.zip",
+      "category": "Blocking & Security",
+      "tags": ["blocking", "groups", "filtering", "security", "adblock"]
+    },
+    {
+      "name": "Network Helper",
+      "description": "Persistent network client information and hostname mappings. Store custom names, notes, tags, and groups for your network devices. Auto-cleanup of stale entries and bulk import/export support.",
+      "version": "1.0.0",
+      "author": "TechniLux",
+      "url": "https://github.com/elabx-org/technilux-apps",
+      "size": "50 KB",
+      "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.0/NetworkHelper.zip",
+      "category": "Network Management",
+      "tags": ["network", "devices", "discovery", "metadata", "hostname-cache"]
+    }
+  ]
+}
