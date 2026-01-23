@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using DnsServerCore.ApplicationCommon;
 using NetworkHelper.Controllers;
 using NetworkHelper.Models;
 using NetworkHelper.Services;
@@ -43,13 +44,13 @@ public class App : IDnsApplication, IDisposable
         Console.WriteLine($"[NetworkHelper] Initialized. Data: {dataPath}");
     }
 
-    public Task<DnsRequestController> ProcessRequestAsync(DnsDatagram request, System.Net.IPEndPoint remoteEP, DnsTransportProtocol protocol, bool isRecursionAllowed)
+    public Task<object?> ProcessRequestAsync(DnsDatagram request, System.Net.IPEndPoint remoteEP, DnsTransportProtocol protocol, bool isRecursionAllowed)
     {
         // This app doesn't intercept DNS queries
-        return Task.FromResult<DnsRequestController>(null!);
+        return Task.FromResult<object?>(null);
     }
 
-    public async Task<DnsRequestController> ProcessRequestAsync(DnsDatagram request, System.Net.IPEndPoint remoteEP, DnsTransportProtocol protocol, bool isRecursionAllowed, string zoneName, string appRecordName, uint appRecordTtl, string appRecordData)
+    public async Task<object?> ProcessRequestAsync(DnsDatagram request, System.Net.IPEndPoint remoteEP, DnsTransportProtocol protocol, bool isRecursionAllowed, string zoneName, string appRecordName, uint appRecordTtl, string appRecordData)
     {
         // This app doesn't use app record data
         return await ProcessRequestAsync(request, remoteEP, protocol, isRecursionAllowed);
