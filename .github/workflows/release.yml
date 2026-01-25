@@ -60,6 +60,7 @@ jobs:
           OUTPUT_DIR="./build"
           mkdir -p "$OUTPUT_DIR"
           cp bin/Release/net9.0/AdvancedBlockingPlus.dll "$OUTPUT_DIR/"
+          cp bin/Release/net9.0/AdvancedBlockingPlus.deps.json "$OUTPUT_DIR/"
           cp dnsApp.config "$OUTPUT_DIR/"
 
           cd "$OUTPUT_DIR"
@@ -75,6 +76,7 @@ jobs:
           OUTPUT_DIR="./build"
           mkdir -p "$OUTPUT_DIR"
           cp bin/Release/net9.0/NetworkHelper.dll "$OUTPUT_DIR/"
+          cp bin/Release/net9.0/NetworkHelper.deps.json "$OUTPUT_DIR/"
           cp dnsApps.config "$OUTPUT_DIR/"
 
           cd "$OUTPUT_DIR"
@@ -90,6 +92,7 @@ jobs:
           OUTPUT_DIR="./build"
           mkdir -p "$OUTPUT_DIR"
           cp bin/Release/net9.0/AdvancedForwardingPlus.dll "$OUTPUT_DIR/"
+          cp bin/Release/net9.0/AdvancedForwardingPlus.deps.json "$OUTPUT_DIR/"
           cp dnsApp.config "$OUTPUT_DIR/"
 
           cd "$OUTPUT_DIR"

@@ -79,7 +79,7 @@ cp dnsApp.config bin/Release/net9.0/
 echo ""
 echo "Creating distribution zip..."
 cd bin/Release/net9.0
-zip -j ../../../AdvancedForwardingPlus.zip AdvancedForwardingPlus.dll dnsApp.config
+zip -j ../../../AdvancedForwardingPlus.zip AdvancedForwardingPlus.dll AdvancedForwardingPlus.deps.json dnsApp.config
 cd "$SCRIPT_DIR"
 
 echo ""
