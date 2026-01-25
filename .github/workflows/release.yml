@@ -18,12 +18,37 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '9.0.x'
 
       - name: Extract version
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      # Extract Technitium DLLs from Docker image
+      - name: Extract Technitium DLLs
+        run: |
+          docker pull technitium/dns-server:latest
+          CONTAINER_ID=$(docker create technitium/dns-server:latest)
+
+          # Create lib directories for each app
+          mkdir -p AdvancedBlockingPlus/lib
+          mkdir -p NetworkHelper/lib
+          mkdir -p AdvancedForwardingPlus/lib
+
+          # Extract DLLs
+          docker cp "$CONTAINER_ID:/opt/technitium/dns/TechnitiumLibrary.dll" ./TechnitiumLibrary.dll
+          docker cp "$CONTAINER_ID:/opt/technitium/dns/TechnitiumLibrary.Net.dll" ./TechnitiumLibrary.Net.dll
+          docker cp "$CONTAINER_ID:/opt/technitium/dns/DnsServerCore.ApplicationCommon.dll" ./DnsServerCore.ApplicationCommon.dll
+
+          # Copy to each app's lib folder
+          for app in AdvancedBlockingPlus NetworkHelper AdvancedForwardingPlus; do
+            cp TechnitiumLibrary.dll "$app/lib/"
+            cp TechnitiumLibrary.Net.dll "$app/lib/"
+            cp DnsServerCore.ApplicationCommon.dll "$app/lib/"
+          done
+
+          docker rm "$CONTAINER_ID"
 
       # Build Advanced Blocking Plus
       - name: Build Advanced Blocking Plus
@@ -34,12 +59,11 @@ jobs:
 
           OUTPUT_DIR="./build"
           mkdir -p "$OUTPUT_DIR"
-          cp bin/Release/net8.0/AdvancedBlockingPlus.dll "$OUTPUT_DIR/"
-          cp bin/Release/net8.0/AdvancedBlockingPlus.deps.json "$OUTPUT_DIR/deps.json" || true
+          cp bin/Release/net9.0/AdvancedBlockingPlus.dll "$OUTPUT_DIR/"
           cp dnsApp.config "$OUTPUT_DIR/"
 
           cd "$OUTPUT_DIR"
-          zip -r "../AdvancedBlockingPlus.zip" ./*
+          zip -j ../AdvancedBlockingPlus.zip ./*
 
       # Build Network Helper
       - name: Build Network Helper
@@ -50,12 +74,26 @@ jobs:
 
           OUTPUT_DIR="./build"
           mkdir -p "$OUTPUT_DIR"
-          cp bin/Release/net8.0/NetworkHelper.dll "$OUTPUT_DIR/"
-          cp bin/Release/net8.0/NetworkHelper.deps.json "$OUTPUT_DIR/deps.json" || true
+          cp bin/Release/net9.0/NetworkHelper.dll "$OUTPUT_DIR/"
           cp dnsApps.config "$OUTPUT_DIR/"
 
           cd "$OUTPUT_DIR"
-          zip -r "../NetworkHelper-${{ env.VERSION }}.zip" ./*
+          zip -j ../NetworkHelper.zip ./*
+
+      # Build Advanced Forwarding Plus
+      - name: Build Advanced Forwarding Plus
+        working-directory: ./AdvancedForwardingPlus
+        run: |
+          dotnet restore
+          dotnet build AdvancedForwardingPlus.csproj -c Release --no-restore
+
+          OUTPUT_DIR="./build"
+          mkdir -p "$OUTPUT_DIR"
+          cp bin/Release/net9.0/AdvancedForwardingPlus.dll "$OUTPUT_DIR/"
+          cp dnsApp.config "$OUTPUT_DIR/"
+
+          cd "$OUTPUT_DIR"
+          zip -j ../AdvancedForwardingPlus.zip ./*
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -63,50 +101,17 @@ jobs:
           name: technilux-apps
           path: |
             ./AdvancedBlockingPlus/AdvancedBlockingPlus.zip
-            ./NetworkHelper/NetworkHelper-*.zip
+            ./NetworkHelper/NetworkHelper.zip
+            ./AdvancedForwardingPlus/AdvancedForwardingPlus.zip
 
-      - name: Create Release
+      - name: Update Release Assets
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           files: |
             ./AdvancedBlockingPlus/AdvancedBlockingPlus.zip
-            ./NetworkHelper/NetworkHelper-*.zip
-          body: |
-            ## TechniLux Apps ${{ env.VERSION }}
-
-            ### Apps Included
-
-            #### Advanced Blocking Plus v1.0.1
-            Enhanced version of Advanced Blocking with support for MULTIPLE groups per client IP.
-
-            #### Network Helper v${{ env.VERSION }}
-            Persistent network client information and hostname mappings.
-
-            ### Installation
-
-            **Option 1: Via App Store**
-            1. Add TechniLux app store to Technitium:
-               ```
-               https://raw.githubusercontent.com/elabx-org/technilux-apps/main/appstore.json
-               ```
-            2. Browse apps and click "Install"
-
-            **Option 2: Manual Installation**
-            1. Download ZIP files below
-            2. Navigate to Technitium DNS Server → Apps
-            3. Click "Install" and upload the ZIP file
-
-            ### Requirements
-
-            - Technitium DNS Server v12.0+
-            - .NET 8.0 runtime
-
-            ### Documentation
-
-            - [Advanced Blocking Plus README](https://github.com/elabx-org/technilux-apps/blob/main/AdvancedBlockingPlus/README.md)
-            - [Network Helper README](https://github.com/elabx-org/technilux-apps/blob/main/NetworkHelper/README.md)
-          draft: false
-          prerelease: false
+            ./NetworkHelper/NetworkHelper.zip
+            ./AdvancedForwardingPlus/AdvancedForwardingPlus.zip
+          append_body: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
