@@ -28,7 +28,7 @@
     {
       "name": "Advanced Forwarding Plus",
       "description": "Enhanced version of Advanced Forwarding with all original features PLUS support for assigning MULTIPLE groups to each client IP address or subnet. Allows forwarding rules from different groups to be aggregated for the same client.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": "TechniLux",
       "url": "https://github.com/elabx-org/technilux-apps",
       "size": "11 KB",
