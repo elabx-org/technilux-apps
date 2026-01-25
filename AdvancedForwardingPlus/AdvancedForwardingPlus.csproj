@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyName>AdvancedForwardingPlus</AssemblyName>
+    <PackageId>AdvancedForwardingPlus</PackageId>
+    <Company>TechniLux</Company>
+    <Product>Technitium DNS Server</Product>
+    <Authors>TechniLux (based on Technitium Advanced Forwarding by Shreyas Zare)</Authors>
+    <Description>Enhanced version of Advanced Forwarding with all original features PLUS support for assigning MULTIPLE groups to each client IP address or subnet. Allows forwarding rules from different groups to be aggregated for the same client.</Description>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <!--
+    INSTRUCTIONS:
+    1. Copy these DLLs from your Technitium DNS Server installation to a 'lib/' folder:
+       - TechnitiumLibrary.dll
+       - TechnitiumLibrary.Net.dll
+       - DnsServerCore.ApplicationCommon.dll
+
+    2. Build: dotnet build -c Release
+
+    Location of DLLs in Docker container: /opt/technitium/dns/
+    Location of DLLs on Linux: /opt/technitium/dns/ or /usr/share/technitium/dns/
+    Location of DLLs on Windows: C:\Program Files\Technitium\DNS Server\
+  -->
+
+  <ItemGroup>
+    <Reference Include="TechnitiumLibrary">
+      <HintPath>lib/TechnitiumLibrary.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TechnitiumLibrary.Net">
+      <HintPath>lib/TechnitiumLibrary.Net.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DnsServerCore.ApplicationCommon">
+      <HintPath>lib/DnsServerCore.ApplicationCommon.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="dnsApp.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
