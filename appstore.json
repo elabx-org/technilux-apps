@@ -9,8 +9,8 @@
       "version": "1.0.1",
       "author": "TechniLux",
       "url": "https://github.com/elabx-org/technilux-apps",
-      "size": "21 KB",
-      "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.1/AdvancedBlockingPlus.zip",
+      "size": "11 KB",
+      "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.0-advancedforwardingplus/AdvancedBlockingPlus.zip",
       "category": "Blocking & Security",
       "tags": ["blocking", "groups", "filtering", "security", "adblock"]
     },
@@ -20,8 +20,8 @@
       "version": "1.0.0",
       "author": "TechniLux",
       "url": "https://github.com/elabx-org/technilux-apps",
-      "size": "50 KB",
-      "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.0/NetworkHelper.zip",
+      "size": "12 KB",
+      "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.0-advancedforwardingplus/NetworkHelper.zip",
       "category": "Network Management",
       "tags": ["network", "devices", "discovery", "metadata", "hostname-cache"]
     },
