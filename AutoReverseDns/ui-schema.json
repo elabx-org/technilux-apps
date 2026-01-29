@@ -1,5 +1,4 @@
 {
-  "$schema": "https://technilux.app/schemas/ui-schema-v1.json",
   "version": "1.0",
   "appName": "Auto Reverse DNS",
   "description": "Automatically creates and maintains PTR records for A/AAAA records",
