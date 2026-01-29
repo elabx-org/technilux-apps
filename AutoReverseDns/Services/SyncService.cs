@@ -7,13 +7,13 @@ namespace AutoReverseDns.Services;
 
 /// <summary>
 /// Background service that syncs A/AAAA records to PTR records
+/// Uses IDnsServer interface directly to avoid HTTP API authentication issues.
 /// </summary>
 public class SyncService : IDisposable
 {
     private readonly IDnsServer _dnsServer;
     private readonly Func<AppConfig> _getConfig;
-    private readonly Func<string?> _getToken;
-    private readonly DnsApiClient _apiClient;
+    private readonly DnsServerAccess _serverAccess;
     private readonly Timer _syncTimer;
     private readonly object _syncLock = new();
     private bool _isSyncing;
@@ -21,12 +21,11 @@ public class SyncService : IDisposable
 
     public AppStats Stats { get; } = new();
 
-    public SyncService(IDnsServer dnsServer, Func<AppConfig> getConfig, Func<string?> getToken)
+    public SyncService(IDnsServer dnsServer, Func<AppConfig> getConfig)
     {
         _dnsServer = dnsServer;
         _getConfig = getConfig;
-        _getToken = getToken;
-        _apiClient = new DnsApiClient("http://localhost:5380");
+        _serverAccess = new DnsServerAccess(dnsServer);
 
         // Start timer - first sync after 10 seconds, then based on config interval
         _syncTimer = new Timer(SyncTimerCallback, null, TimeSpan.FromSeconds(10), Timeout.InfiniteTimeSpan);
@@ -42,7 +41,7 @@ public class SyncService : IDisposable
 
             if (config.Enabled)
             {
-                _ = RunSyncAsync();
+                RunSync();
             }
         }
         catch (Exception ex)
@@ -62,7 +61,7 @@ public class SyncService : IDisposable
         }
     }
 
-    public async Task<SyncResult> RunSyncAsync()
+    public SyncResult RunSync()
     {
         var result = new SyncResult();
         var stopwatch = Stopwatch.StartNew();
@@ -89,17 +88,10 @@ public class SyncService : IDisposable
                 return result;
             }
 
-            // Set API token
-            var token = _getToken();
-            if (!string.IsNullOrEmpty(token))
-            {
-                _apiClient.SetToken(token);
-            }
-
             Console.WriteLine("[AutoReverseDns] Starting sync...");
 
-            // Get all zones
-            var zones = await _apiClient.ListZonesAsync();
+            // Get all zones using direct IDnsServer access
+            var zones = _serverAccess.ListZones();
 
             // Cache existing reverse zones for lookup
             var reverseZones = zones
@@ -126,7 +118,7 @@ public class SyncService : IDisposable
                         continue;
 
                     result.ZonesProcessed++;
-                    await ProcessZoneAsync(zone.Name, config, reverseZones, result);
+                    ProcessZone(zone.Name, config, reverseZones, result);
                 }
                 catch (Exception ex)
                 {
@@ -159,12 +151,20 @@ public class SyncService : IDisposable
         }
     }
 
-    private async Task ProcessZoneAsync(string zoneName, AppConfig config, HashSet<string> existingReverseZones, SyncResult result)
+    /// <summary>
+    /// Async wrapper for compatibility with HTTP endpoint
+    /// </summary>
+    public Task<SyncResult> RunSyncAsync()
+    {
+        return Task.FromResult(RunSync());
+    }
+
+    private void ProcessZone(string zoneName, AppConfig config, HashSet<string> existingReverseZones, SyncResult result)
     {
         var zoneConfig = config.Zones.GetValueOrDefault(zoneName);
 
         // Get all records in the zone
-        var records = await _apiClient.GetZoneRecordsAsync(zoneName);
+        var records = _serverAccess.GetZoneRecords(zoneName);
 
         foreach (var record in records)
         {
@@ -174,7 +174,7 @@ public class SyncService : IDisposable
 
                 try
                 {
-                    await ProcessAddressRecordAsync(record, zoneName, config, zoneConfig, existingReverseZones, result);
+                    ProcessAddressRecord(record, zoneName, config, zoneConfig, existingReverseZones, result);
                 }
                 catch (Exception ex)
                 {
@@ -184,7 +184,7 @@ public class SyncService : IDisposable
         }
     }
 
-    private async Task ProcessAddressRecordAsync(
+    private void ProcessAddressRecord(
         DnsRecord record,
         string zoneName,
         AppConfig config,
@@ -216,7 +216,7 @@ public class SyncService : IDisposable
             {
                 try
                 {
-                    var created = await _apiClient.CreateZoneAsync(reverseZone);
+                    var created = _serverAccess.CreateZone(reverseZone);
                     if (created)
                     {
                         existingReverseZones.Add(reverseZone);
@@ -244,7 +244,7 @@ public class SyncService : IDisposable
 
         // Check if PTR record already exists
         var hostname = record.Name;
-        var existingPtrs = await _apiClient.GetPtrRecordsAsync(reverseZone, ptrName);
+        var existingPtrs = _serverAccess.GetPtrRecords(reverseZone, ptrName);
 
         var shouldOverwrite = zoneConfig?.OverwriteExisting ?? config.OverwriteExisting;
         var ttl = config.PtrTtl > 0 ? config.PtrTtl : record.TTL;
@@ -274,10 +274,10 @@ public class SyncService : IDisposable
             {
                 foreach (var oldPtr in existingPtrs)
                 {
-                    await _apiClient.DeletePtrRecordAsync(reverseZone, ptrName, oldPtr);
+                    _serverAccess.DeletePtrRecord(reverseZone, ptrName, oldPtr);
                 }
 
-                var success = await _apiClient.AddPtrRecordAsync(reverseZone, ptrName, hostname, ttl);
+                var success = _serverAccess.AddPtrRecord(reverseZone, ptrName, hostname, ttl);
                 if (success)
                 {
                     result.PtrsUpdated++;
@@ -298,7 +298,7 @@ public class SyncService : IDisposable
             // Create new PTR
             try
             {
-                var success = await _apiClient.AddPtrRecordAsync(reverseZone, ptrName, hostname, ttl);
+                var success = _serverAccess.AddPtrRecord(reverseZone, ptrName, hostname, ttl);
                 if (success)
                 {
                     result.PtrsCreated++;

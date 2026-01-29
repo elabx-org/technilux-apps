@@ -1,52 +1,51 @@
 using System.Net;
 using System.Text.Json;
-using System.Web;
+using DnsServerCore.ApplicationCommon;
+using TechnitiumLibrary.Net.Dns;
+using TechnitiumLibrary.Net.Dns.ResourceRecords;
 
 namespace AutoReverseDns.Services;
 
 /// <summary>
-/// Internal HTTP client for Technitium DNS API calls
+/// Direct access to Technitium DNS server via IDnsServer interface.
+/// This avoids HTTP API calls which require authentication tokens.
 /// </summary>
-public class DnsApiClient
+public class DnsServerAccess
 {
-    private readonly HttpClient _httpClient;
-    private readonly string _baseUrl;
-    private string? _token;
+    private readonly IDnsServer _dnsServer;
 
-    public DnsApiClient(string baseUrl = "http://localhost:5380")
+    public DnsServerAccess(IDnsServer dnsServer)
     {
-        _baseUrl = baseUrl.TrimEnd('/');
-        _httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromSeconds(30)
-        };
-    }
-
-    public void SetToken(string token)
-    {
-        _token = token;
+        _dnsServer = dnsServer;
     }
 
     /// <summary>
-    /// Get list of all zones
+    /// Get list of all zones from the authoritative zone manager
     /// </summary>
-    public async Task<List<ZoneInfo>> ListZonesAsync()
+    public List<ZoneInfo> ListZones()
     {
-        var response = await GetAsync("/api/zones/list");
         var zones = new List<ZoneInfo>();
 
-        if (response.TryGetProperty("response", out var resp) &&
-            resp.TryGetProperty("zones", out var zonesArray))
+        try
         {
-            foreach (var zone in zonesArray.EnumerateArray())
+            var zoneManager = _dnsServer.AuthZoneManager;
+            if (zoneManager == null)
+                return zones;
+
+            // Get all zones - the AuthZoneManager has a method to list zones
+            foreach (var zone in zoneManager.GetZones())
             {
                 zones.Add(new ZoneInfo
                 {
-                    Name = zone.GetProperty("name").GetString() ?? "",
-                    Type = zone.GetProperty("type").GetString() ?? "",
-                    Disabled = zone.TryGetProperty("disabled", out var d) && d.GetBoolean()
+                    Name = zone.Name,
+                    Type = zone.Type.ToString(),
+                    Disabled = zone.Disabled
                 });
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutoReverseDns] Error listing zones: {ex.Message}");
         }
 
         return zones;
@@ -55,39 +54,48 @@ public class DnsApiClient
     /// <summary>
     /// Get all records in a zone
     /// </summary>
-    public async Task<List<DnsRecord>> GetZoneRecordsAsync(string zoneName)
+    public List<DnsRecord> GetZoneRecords(string zoneName)
     {
-        var response = await GetAsync($"/api/zones/records/get?zone={Encode(zoneName)}&domain={Encode(zoneName)}&listZone=true");
         var records = new List<DnsRecord>();
 
-        if (response.TryGetProperty("response", out var resp) &&
-            resp.TryGetProperty("records", out var recordsArray))
+        try
         {
-            foreach (var record in recordsArray.EnumerateArray())
+            var zoneManager = _dnsServer.AuthZoneManager;
+            if (zoneManager == null)
+                return records;
+
+            var zone = zoneManager.GetZone(zoneName);
+            if (zone == null)
+                return records;
+
+            // Get all records from the zone
+            var allRecords = zone.GetRecords(zoneName);
+            foreach (var rrset in allRecords)
             {
-                var type = record.GetProperty("type").GetString() ?? "";
-                var name = record.GetProperty("name").GetString() ?? "";
-                var ttl = record.TryGetProperty("ttl", out var t) ? t.GetUInt32() : 3600u;
-
-                string? rdata = null;
-                if (record.TryGetProperty("rData", out var rdataObj))
+                foreach (var rr in rrset)
                 {
-                    if (type == "A" && rdataObj.TryGetProperty("ipAddress", out var ip))
-                        rdata = ip.GetString();
-                    else if (type == "AAAA" && rdataObj.TryGetProperty("ipAddress", out var ip6))
-                        rdata = ip6.GetString();
-                    else if (type == "PTR" && rdataObj.TryGetProperty("ptrName", out var ptr))
-                        rdata = ptr.GetString();
+                    string? rdata = null;
+
+                    if (rr is DnsARecordData aRecord)
+                        rdata = aRecord.Address.ToString();
+                    else if (rr is DnsAAAARecordData aaaaRecord)
+                        rdata = aaaaRecord.Address.ToString();
+                    else if (rr is DnsPTRRecordData ptrRecord)
+                        rdata = ptrRecord.Domain;
+
+                    records.Add(new DnsRecord
+                    {
+                        Name = rrset.Name,
+                        Type = rrset.Type.ToString(),
+                        TTL = rrset.TtlValue,
+                        RData = rdata
+                    });
                 }
-
-                records.Add(new DnsRecord
-                {
-                    Name = name,
-                    Type = type,
-                    TTL = ttl,
-                    RData = rdata
-                });
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AutoReverseDns] Error getting zone records for {zoneName}: {ex.Message}");
         }
 
         return records;
@@ -96,25 +104,36 @@ public class DnsApiClient
     /// <summary>
     /// Check if a zone exists
     /// </summary>
-    public async Task<bool> ZoneExistsAsync(string zoneName)
+    public bool ZoneExists(string zoneName)
     {
-        var zones = await ListZonesAsync();
-        return zones.Any(z => z.Name.Equals(zoneName, StringComparison.OrdinalIgnoreCase));
+        try
+        {
+            var zoneManager = _dnsServer.AuthZoneManager;
+            return zoneManager?.GetZone(zoneName) != null;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>
     /// Create a primary zone
     /// </summary>
-    public async Task<bool> CreateZoneAsync(string zoneName)
+    public bool CreateZone(string zoneName)
     {
         try
         {
-            var response = await GetAsync($"/api/zones/create?zone={Encode(zoneName)}&type=Primary");
-            return response.TryGetProperty("status", out var status) &&
-                   status.GetString() == "ok";
+            var zoneManager = _dnsServer.AuthZoneManager;
+            if (zoneManager == null)
+                return false;
+
+            zoneManager.CreatePrimaryZone(zoneName, _dnsServer.ServerDomain, false);
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[AutoReverseDns] Error creating zone {zoneName}: {ex.Message}");
             return false;
         }
     }
@@ -122,17 +141,20 @@ public class DnsApiClient
     /// <summary>
     /// Add a PTR record
     /// </summary>
-    public async Task<bool> AddPtrRecordAsync(string zone, string ptrName, string hostname, uint ttl)
+    public bool AddPtrRecord(string zone, string ptrName, string hostname, uint ttl)
     {
         try
         {
-            var url = $"/api/zones/records/add?zone={Encode(zone)}&domain={Encode(ptrName)}&type=PTR&ttl={ttl}&ptrName={Encode(hostname)}";
-            var response = await GetAsync(url);
-            return response.TryGetProperty("status", out var status) &&
-                   status.GetString() == "ok";
+            var zoneManager = _dnsServer.AuthZoneManager;
+            if (zoneManager == null)
+                return false;
+
+            zoneManager.AddRecord(zone, ptrName, DnsResourceRecordType.PTR, ttl, new DnsPTRRecordData(hostname));
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[AutoReverseDns] Error adding PTR record {ptrName}: {ex.Message}");
             return false;
         }
     }
@@ -140,17 +162,20 @@ public class DnsApiClient
     /// <summary>
     /// Delete a PTR record
     /// </summary>
-    public async Task<bool> DeletePtrRecordAsync(string zone, string ptrName, string hostname)
+    public bool DeletePtrRecord(string zone, string ptrName, string hostname)
     {
         try
         {
-            var url = $"/api/zones/records/delete?zone={Encode(zone)}&domain={Encode(ptrName)}&type=PTR&ptrName={Encode(hostname)}";
-            var response = await GetAsync(url);
-            return response.TryGetProperty("status", out var status) &&
-                   status.GetString() == "ok";
+            var zoneManager = _dnsServer.AuthZoneManager;
+            if (zoneManager == null)
+                return false;
+
+            zoneManager.DeleteRecord(zone, ptrName, DnsResourceRecordType.PTR, new DnsPTRRecordData(hostname));
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[AutoReverseDns] Error deleting PTR record {ptrName}: {ex.Message}");
             return false;
         }
     }
@@ -158,26 +183,31 @@ public class DnsApiClient
     /// <summary>
     /// Get PTR records for a specific name
     /// </summary>
-    public async Task<List<string>> GetPtrRecordsAsync(string zone, string ptrName)
+    public List<string> GetPtrRecords(string zone, string ptrName)
     {
         var ptrs = new List<string>();
 
         try
         {
-            var response = await GetAsync($"/api/zones/records/get?zone={Encode(zone)}&domain={Encode(ptrName)}");
+            var zoneManager = _dnsServer.AuthZoneManager;
+            if (zoneManager == null)
+                return ptrs;
 
-            if (response.TryGetProperty("response", out var resp) &&
-                resp.TryGetProperty("records", out var recordsArray))
+            var zoneObj = zoneManager.GetZone(zone);
+            if (zoneObj == null)
+                return ptrs;
+
+            var records = zoneObj.GetRecords(ptrName);
+            foreach (var rrset in records)
             {
-                foreach (var record in recordsArray.EnumerateArray())
+                if (rrset.Type == DnsResourceRecordType.PTR)
                 {
-                    if (record.TryGetProperty("type", out var type) && type.GetString() == "PTR" &&
-                        record.TryGetProperty("rData", out var rdata) &&
-                        rdata.TryGetProperty("ptrName", out var ptrValue))
+                    foreach (var rr in rrset)
                     {
-                        var val = ptrValue.GetString();
-                        if (!string.IsNullOrEmpty(val))
-                            ptrs.Add(val);
+                        if (rr is DnsPTRRecordData ptrData)
+                        {
+                            ptrs.Add(ptrData.Domain);
+                        }
                     }
                 }
             }
@@ -189,20 +219,6 @@ public class DnsApiClient
 
         return ptrs;
     }
-
-    private async Task<JsonElement> GetAsync(string endpoint)
-    {
-        var url = _baseUrl + endpoint;
-        if (!string.IsNullOrEmpty(_token))
-        {
-            url += (url.Contains('?') ? "&" : "?") + $"token={_token}";
-        }
-
-        var response = await _httpClient.GetStringAsync(url);
-        return JsonSerializer.Deserialize<JsonElement>(response);
-    }
-
-    private static string Encode(string value) => HttpUtility.UrlEncode(value);
 }
 
 public class ZoneInfo

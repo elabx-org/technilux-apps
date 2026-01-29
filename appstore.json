@@ -39,11 +39,11 @@
     {
       "name": "Auto Reverse DNS",
       "description": "Automatically creates and maintains PTR records for A/AAAA records in configured zones. Supports per-zone control, duplicate prevention, automatic reverse zone creation, and cluster mode.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "author": "TechniLux",
       "url": "https://github.com/elabx-org/technilux-apps",
       "size": "15 KB",
-      "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.1-autoreversedns/AutoReverseDns.zip",
+      "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.2-autoreversedns/AutoReverseDns.zip",
       "schemaUrl": "https://raw.githubusercontent.com/elabx-org/technilux-apps/main/AutoReverseDns/ui-schema.json",
       "category": "Zone Management",
       "tags": ["ptr", "reverse-dns", "automation", "zones", "arpa"]

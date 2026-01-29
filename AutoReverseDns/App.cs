@@ -12,7 +12,6 @@ public class App : IDnsApplication, IDisposable
     private AppConfig _config = new();
     private SyncService? _syncService;
     private string? _configPath;
-    private string? _apiToken;
 
     public string Description => "Automatically creates and maintains PTR records for A/AAAA records in configured zones";
 
@@ -24,9 +23,8 @@ public class App : IDnsApplication, IDisposable
         // Load configuration
         _config = await LoadConfigAsync(config);
 
-        // Initialize sync service
-        // Note: For localhost API calls, token may not be required
-        _syncService = new SyncService(dnsServer, () => _config, () => _apiToken);
+        // Initialize sync service using direct IDnsServer access (no HTTP API)
+        _syncService = new SyncService(dnsServer, () => _config);
 
         Console.WriteLine($"[AutoReverseDns] Initialized. Enabled: {_config.Enabled}, Interval: {_config.SyncIntervalSeconds}s");
     }
@@ -98,9 +96,6 @@ public class App : IDnsApplication, IDisposable
     /// </summary>
     public async Task<string> ProcessHttpRequestAsync(string path, string queryString, string method, string requestBody, string token)
     {
-        // Store token for API calls
-        _apiToken = token;
-
         var options = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -168,21 +163,16 @@ public class App : IDnsApplication, IDisposable
         return JsonSerializer.Serialize(new { success = true, stats = _syncService.Stats }, options);
     }
 
-    private async Task<string> HandleGetZones(JsonSerializerOptions options)
+    private Task<string> HandleGetZones(JsonSerializerOptions options)
     {
         if (_dnsServer == null)
         {
-            return JsonSerializer.Serialize(new { error = "Server not initialized" }, options);
+            return Task.FromResult(JsonSerializer.Serialize(new { error = "Server not initialized" }, options));
         }
 
-        // Use API client to list zones
-        var apiClient = new DnsApiClient("http://localhost:5380");
-        if (!string.IsNullOrEmpty(_apiToken))
-        {
-            apiClient.SetToken(_apiToken);
-        }
-
-        var zones = await apiClient.ListZonesAsync();
+        // Use direct IDnsServer access (no HTTP API needed)
+        var serverAccess = new DnsServerAccess(_dnsServer);
+        var zones = serverAccess.ListZones();
         var zoneList = new List<object>();
 
         foreach (var zone in zones)
@@ -206,7 +196,7 @@ public class App : IDnsApplication, IDisposable
             });
         }
 
-        return JsonSerializer.Serialize(new { success = true, zones = zoneList }, options);
+        return Task.FromResult(JsonSerializer.Serialize(new { success = true, zones = zoneList }, options));
     }
 
     private async Task<string> HandleToggleZone(string requestBody, JsonSerializerOptions options)
