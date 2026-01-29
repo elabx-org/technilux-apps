@@ -31,21 +31,24 @@ jobs:
           docker pull technitium/dns-server:latest
           CONTAINER_ID=$(docker create technitium/dns-server:latest)
 
-          # Create lib directories for each app
-          mkdir -p AdvancedBlockingPlus/lib
-          mkdir -p NetworkHelper/lib
-          mkdir -p AdvancedForwardingPlus/lib
+          # Create libs directories for each app
+          mkdir -p AdvancedBlockingPlus/libs
+          mkdir -p NetworkHelper/libs
+          mkdir -p AdvancedForwardingPlus/libs
+          mkdir -p AutoReverseDns/libs
 
           # Extract DLLs
           docker cp "$CONTAINER_ID:/opt/technitium/dns/TechnitiumLibrary.dll" ./TechnitiumLibrary.dll
           docker cp "$CONTAINER_ID:/opt/technitium/dns/TechnitiumLibrary.Net.dll" ./TechnitiumLibrary.Net.dll
           docker cp "$CONTAINER_ID:/opt/technitium/dns/DnsServerCore.ApplicationCommon.dll" ./DnsServerCore.ApplicationCommon.dll
+          docker cp "$CONTAINER_ID:/opt/technitium/dns/DnsServerCore.dll" ./DnsServerCore.dll
 
-          # Copy to each app's lib folder
-          for app in AdvancedBlockingPlus NetworkHelper AdvancedForwardingPlus; do
-            cp TechnitiumLibrary.dll "$app/lib/"
-            cp TechnitiumLibrary.Net.dll "$app/lib/"
-            cp DnsServerCore.ApplicationCommon.dll "$app/lib/"
+          # Copy to each app's libs folder
+          for app in AdvancedBlockingPlus NetworkHelper AdvancedForwardingPlus AutoReverseDns; do
+            cp TechnitiumLibrary.dll "$app/libs/"
+            cp TechnitiumLibrary.Net.dll "$app/libs/"
+            cp DnsServerCore.ApplicationCommon.dll "$app/libs/"
+            cp DnsServerCore.dll "$app/libs/"
           done
 
           docker rm "$CONTAINER_ID"
@@ -98,6 +101,22 @@ jobs:
           cd "$OUTPUT_DIR"
           zip -j ../AdvancedForwardingPlus.zip ./*
 
+      # Build Auto Reverse DNS
+      - name: Build Auto Reverse DNS
+        working-directory: ./AutoReverseDns
+        run: |
+          dotnet restore
+          dotnet build AutoReverseDns.csproj -c Release --no-restore
+
+          OUTPUT_DIR="./build"
+          mkdir -p "$OUTPUT_DIR"
+          cp bin/Release/net9.0/AutoReverseDns.dll "$OUTPUT_DIR/"
+          cp bin/Release/net9.0/AutoReverseDns.deps.json "$OUTPUT_DIR/"
+          cp dnsApp.config "$OUTPUT_DIR/"
+
+          cd "$OUTPUT_DIR"
+          zip -j ../AutoReverseDns.zip ./*
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -106,6 +125,7 @@ jobs:
             ./AdvancedBlockingPlus/AdvancedBlockingPlus.zip
             ./NetworkHelper/NetworkHelper.zip
             ./AdvancedForwardingPlus/AdvancedForwardingPlus.zip
+            ./AutoReverseDns/AutoReverseDns.zip
 
       - name: Update Release Assets
         if: startsWith(github.ref, 'refs/tags/')
@@ -115,6 +135,7 @@ jobs:
             ./AdvancedBlockingPlus/AdvancedBlockingPlus.zip
             ./NetworkHelper/NetworkHelper.zip
             ./AdvancedForwardingPlus/AdvancedForwardingPlus.zip
+            ./AutoReverseDns/AutoReverseDns.zip
           append_body: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

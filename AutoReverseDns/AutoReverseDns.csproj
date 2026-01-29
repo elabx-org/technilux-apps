@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>AutoReverseDns</AssemblyName>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Company>TechniLux</Company>
+    <Product>Auto Reverse DNS</Product>
+    <Authors>TechniLux</Authors>
+    <Description>Automatically creates and maintains PTR records for A/AAAA records in configured zones</Description>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="TechnitiumLibrary">
+      <HintPath>libs/TechnitiumLibrary.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TechnitiumLibrary.Net">
+      <HintPath>libs/TechnitiumLibrary.Net.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DnsServerCore">
+      <HintPath>libs/DnsServerCore.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DnsServerCore.ApplicationCommon">
+      <HintPath>libs/DnsServerCore.ApplicationCommon.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="dnsApp.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

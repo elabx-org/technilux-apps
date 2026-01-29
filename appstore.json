@@ -35,6 +35,17 @@
       "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.1-advancedforwardingplus/AdvancedForwardingPlus.zip",
       "category": "Forwarding",
       "tags": ["forwarding", "groups", "conditional", "upstream", "dns"]
+    },
+    {
+      "name": "Auto Reverse DNS",
+      "description": "Automatically creates and maintains PTR records for A/AAAA records in configured zones. Supports per-zone control, duplicate prevention, automatic reverse zone creation, and cluster mode.",
+      "version": "1.0.0",
+      "author": "TechniLux",
+      "url": "https://github.com/elabx-org/technilux-apps",
+      "size": "15 KB",
+      "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.0-autoreversedns/AutoReverseDns.zip",
+      "category": "Zone Management",
+      "tags": ["ptr", "reverse-dns", "automation", "zones", "arpa"]
     }
   ]
 }
