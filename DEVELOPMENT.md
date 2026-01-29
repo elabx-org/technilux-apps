@@ -7,31 +7,44 @@ technilux-apps/
 ├── .github/
 │   └── workflows/
 │       └── release.yml           # Automated build and release
-├── NetworkHelper/
+├── AdvancedBlockingPlus/         # Enhanced blocking with multi-group support
+├── AdvancedForwardingPlus/       # Enhanced forwarding with multi-group support
+├── AutoReverseDns/               # Automatic PTR record management
 │   ├── App.cs                    # Main entry point (IDnsApplication)
-│   ├── NetworkHelper.csproj      # .NET 8.0 project file
-│   ├── dnsApps.config            # App metadata for Technitium
+│   ├── AutoReverseDns.csproj     # .NET 9.0 project file
+│   ├── dnsApps.config            # App metadata for Technitium (REQUIRED)
+│   ├── ui-schema.json            # TechniLux UI schema for visual config
 │   ├── Models/
-│   │   ├── Device.cs             # Device data model
-│   │   ├── AppSettings.cs        # Settings model
-│   │   └── ApiResponse.cs        # Standard API response wrapper
-│   ├── Storage/
-│   │   └── DeviceStore.cs        # JSON file storage with backups
-│   ├── Controllers/
-│   │   ├── DevicesController.cs  # Device CRUD endpoints
-│   │   ├── SettingsController.cs # Settings management
-│   │   └── UtilityController.cs  # Stats, cleanup, export
 │   ├── Services/
-│   │   ├── CleanupService.cs     # Background cleanup task
-│   │   └── ExportService.cs      # CSV/JSON export
-│   ├── Utils/
-│   │   └── Validation.cs         # Input validation helpers
 │   ├── build.sh                  # Build and package script
-│   ├── test-api.sh               # API testing script
-│   └── README.md                 # App documentation
-├── .gitignore
+│   └── README.md
+├── NetworkHelper/                # Network client metadata storage
+│   ├── App.cs                    # Main entry point (IDnsApplication)
+│   ├── NetworkHelper.csproj      # .NET 9.0 project file
+│   ├── dnsApps.config            # App metadata for Technitium (REQUIRED)
+│   ├── Models/
+│   ├── Storage/
+│   ├── Controllers/
+│   ├── Services/
+│   ├── build.sh
+│   └── README.md
+├── schemas/                      # Example UI schemas for reference
+├── appstore.json                 # TechniLux app store catalog
+├── UI-SCHEMA-GUIDE.md            # Complete UI schema documentation
+├── DEVELOPMENT.md                # This file
 └── README.md                     # Repository overview
 ```
+
+### Required Files for Each App
+
+| File | Purpose |
+|------|---------|
+| `App.cs` | Main entry point implementing `IDnsApplication` |
+| `*.csproj` | .NET project file with version info |
+| `dnsApps.config` | **Required** - App metadata (name, version, description) |
+| `build.sh` | Build and package script |
+| `ui-schema.json` | Optional - TechniLux visual config schema |
+| `README.md` | App documentation |
 
 ## Building Locally
 
@@ -100,26 +113,46 @@ The build script will create:
 
 ### Release Process
 
-1. Update version in:
-   - `NetworkHelper.csproj` - `<Version>1.0.0</Version>`
-   - `dnsApps.config` - `"version": "1.0.0"`
-   - `build.sh` - `VERSION="1.0.0"`
+1. **Update version in all locations** (must match):
+
+   | File | Field | Example |
+   |------|-------|---------|
+   | `*.csproj` | `<Version>` | `1.0.1` |
+   | `*.csproj` | `<AssemblyVersion>` | `1.0.1.0` |
+   | `*.csproj` | `<FileVersion>` | `1.0.1.0` |
+   | `dnsApps.config` | `"version"` | `"1.0.1"` |
+   | `appstore.json` | `"version"` | `"1.0.1"` |
+   | `appstore.json` | `"downloadUrl"` | Update tag in URL |
 
 2. Commit version bump:
    ```bash
-   git commit -am "chore: bump version to 1.0.0"
+   git commit -am "chore: bump AppName to v1.0.1"
+   git push origin main
    ```
 
-3. Create and push tag:
+3. Create and push tag (use app-specific tag for single-app releases):
    ```bash
-   git tag v1.0.0
-   git push origin v1.0.0
+   # For single app release
+   git tag v1.0.1-autoreversedns
+   git push origin v1.0.1-autoreversedns
+
+   # For full release of all apps
+   git tag v1.0.1
+   git push origin v1.0.1
    ```
 
 4. GitHub Actions will automatically:
-   - Build the project
-   - Create ZIP package
-   - Create GitHub release with the ZIP attached
+   - Build all apps
+   - Create ZIP packages
+   - Create GitHub release with all ZIPs attached
+
+### Version Mismatch Issues
+
+If the installed app shows a different version than expected (e.g., "1.0" instead of "1.0.1"):
+
+1. **Check `dnsApps.config`** - Ensure it has the correct version
+2. **Verify ZIP contents** - The ZIP must contain `dnsApps.config` with metadata
+3. **Rebuild and reinstall** - Uninstall the app and install fresh from the store
 
 ## API Endpoints Reference
 
@@ -145,6 +178,81 @@ All endpoints require `?token=<admin-token>`
 | GET | `/stats` | Get statistics |
 | POST | `/cleanup` | Manually trigger cleanup |
 | GET | `/export?format=json\|csv` | Export devices |
+
+## App Metadata File (dnsApps.config)
+
+Every Technitium DNS app **must** include a `dnsApps.config` file in the ZIP package. This file contains the app metadata that Technitium uses to display app information.
+
+### Required Structure
+
+```json
+{
+  "name": "My App Name",
+  "version": "1.0.0",
+  "description": "What this app does",
+  "author": "TechniLux",
+  "url": "https://github.com/elabx-org/technilux-apps",
+  "appRecordDataTemplate": null,
+  "configTemplate": {
+    // Default configuration values (optional)
+  }
+}
+```
+
+### Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Display name shown in Technitium and TechniLux UI |
+| `version` | Yes | Semantic version (e.g., "1.0.0") - **must match csproj** |
+| `description` | Yes | Brief description of the app's functionality |
+| `author` | No | Author name |
+| `url` | No | Project URL |
+| `appRecordDataTemplate` | No | Template for APP record data (null if not applicable) |
+| `configTemplate` | No | Default configuration object applied on first install |
+
+### Important Notes
+
+1. **Version Consistency**: The version in `dnsApps.config` must match the version in your `.csproj` file:
+   ```xml
+   <Version>1.0.0</Version>
+   <AssemblyVersion>1.0.0.0</AssemblyVersion>
+   <FileVersion>1.0.0.0</FileVersion>
+   ```
+
+2. **File Naming**: Use `dnsApps.config` (plural), not `dnsApp.config`. The plural form is the standard Technitium format for app metadata.
+
+3. **Build Script**: Ensure your build script copies `dnsApps.config` to the output:
+   ```bash
+   cp dnsApps.config "$OUTPUT_DIR/"
+   ```
+
+4. **csproj Reference**: Include the config file in your project:
+   ```xml
+   <ItemGroup>
+     <None Include="dnsApps.config">
+       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </None>
+   </ItemGroup>
+   ```
+
+### Example: Auto Reverse DNS
+
+```json
+{
+  "name": "Auto Reverse DNS",
+  "version": "1.0.1",
+  "description": "Automatically creates and maintains PTR records for A/AAAA records",
+  "author": "TechniLux",
+  "url": "https://github.com/elabx-org/technilux-apps",
+  "appRecordDataTemplate": null,
+  "configTemplate": {
+    "enabled": true,
+    "syncIntervalSeconds": 60,
+    "createReverseZones": true
+  }
+}
+```
 
 ## Code Style
 
