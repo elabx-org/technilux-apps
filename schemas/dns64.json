@@ -1,0 +1,120 @@
+{
+  "version": "1.0",
+  "appName": "DNS64",
+  "description": "Synthesizes AAAA records from A records for IPv6-only networks",
+  "sections": [
+    {
+      "id": "general",
+      "title": "General Settings",
+      "fields": [
+        {
+          "id": "enableDns64",
+          "path": "enableDns64",
+          "type": "switch",
+          "label": "Enable DNS64",
+          "description": "Enable or disable DNS64 globally",
+          "default": true
+        },
+        {
+          "id": "appPreference",
+          "path": "appPreference",
+          "type": "number",
+          "label": "App Preference",
+          "description": "Lower values give higher priority when multiple apps handle the same query",
+          "default": 30,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "id": "networkMappings",
+      "title": "Network Group Mappings",
+      "description": "Map client networks to DNS64 groups",
+      "fields": [
+        {
+          "id": "networkGroupMap",
+          "path": "networkGroupMap",
+          "type": "keyValue",
+          "label": "Network to Group Mapping",
+          "keyLabel": "Network CIDR",
+          "keyPlaceholder": "10.0.0.0/8",
+          "valueSchema": {
+            "fields": [
+              {
+                "id": "group",
+                "path": "",
+                "type": "select",
+                "label": "Group",
+                "optionsFrom": "groups[*].name"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "groups",
+      "title": "DNS64 Groups",
+      "description": "Configure DNS64 settings per group",
+      "fields": [
+        {
+          "id": "groups",
+          "path": "groups",
+          "type": "tabs",
+          "label": "Groups",
+          "addLabel": "Group",
+          "tabsOptions": {
+            "nameField": "name",
+            "defaultItem": {
+              "name": "New Group",
+              "enableDns64": true,
+              "dns64PrefixMap": {},
+              "excludedIpv6": []
+            },
+            "allowAdd": true,
+            "allowDelete": true,
+            "allowRename": true,
+            "allowCopy": true,
+            "minTabs": 0,
+            "itemSchema": {
+              "fields": [
+                {
+                  "id": "name",
+                  "path": "name",
+                  "type": "text",
+                  "label": "Group Name",
+                  "required": true
+                },
+                {
+                  "id": "enableDns64",
+                  "path": "enableDns64",
+                  "type": "switch",
+                  "label": "Enable DNS64 for this Group",
+                  "default": true
+                },
+                {
+                  "id": "dns64PrefixMap",
+                  "path": "dns64PrefixMap",
+                  "type": "keyValue",
+                  "label": "IPv4 to IPv6 Prefix Mapping",
+                  "description": "Map IPv4 networks to DNS64 prefixes (use null for default prefix)",
+                  "keyLabel": "IPv4 Network",
+                  "keyPlaceholder": "0.0.0.0/0"
+                },
+                {
+                  "id": "excludedIpv6",
+                  "path": "excludedIpv6",
+                  "type": "list",
+                  "label": "Excluded IPv6 Addresses",
+                  "description": "IPv6 addresses to exclude from DNS64 synthesis",
+                  "itemPlaceholder": "Enter IPv6 address"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

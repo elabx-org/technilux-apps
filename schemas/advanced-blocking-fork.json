@@ -1,0 +1,6 @@
+{
+  "version": "1.0",
+  "appName": "Advanced Blocking Fork",
+  "description": "Example schema that references an existing TechniLux component for complex UIs",
+  "component": "AdvancedBlockingConfig"
+}

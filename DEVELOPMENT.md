@@ -286,142 +286,39 @@ Test with the TechniLux UI:
 
 ## TechniLux UI Integration
 
-### UI Schema Overview
+Apps can provide a `ui-schema.json` file to enable a visual configuration interface in TechniLux UI. This eliminates the need for users to edit raw JSON.
 
-Apps can provide a `ui-schema.json` file to enable a visual configuration interface in TechniLux UI. This eliminates the need for users to edit raw JSON configuration.
+**For complete documentation, see [`UI-SCHEMA-GUIDE.md`](./UI-SCHEMA-GUIDE.md)**
+
+### Quick Start
+
+1. Create `ui-schema.json` in your app directory
+2. Add `schemaUrl` to `appstore.json`
 
 ### Two Approaches
 
-#### 1. Dynamic Schema (Recommended for Simple Apps)
+| Approach | Use Case | Example |
+|----------|----------|---------|
+| **Dynamic Schema** | Most apps | Define fields in JSON |
+| **Component Reference** | Complex UIs | Reference existing component |
 
-Define fields and sections that TechniLux renders dynamically:
+### Example Schemas
 
-```json
-{
-  "version": "1.0",
-  "appName": "My App",
-  "description": "What this app does",
-  "sections": [
-    {
-      "id": "general",
-      "title": "General Settings",
-      "fields": [
-        {
-          "id": "enabled",
-          "path": "enabled",
-          "type": "switch",
-          "label": "Enable App",
-          "default": true
-        },
-        {
-          "id": "interval",
-          "path": "intervalSeconds",
-          "type": "number",
-          "label": "Check Interval",
-          "min": 10,
-          "max": 3600,
-          "suffix": "seconds"
-        }
-      ]
-    }
-  ]
-}
-```
+| Schema | Complexity | Features Demonstrated |
+|--------|------------|----------------------|
+| [`schemas/no-data.json`](./schemas/no-data.json) | Simple | String list |
+| [`schemas/drop-requests.json`](./schemas/drop-requests.json) | Medium | Object array, table columns, conditions |
+| [`schemas/dns64.json`](./schemas/dns64.json) | Complex | Tabs, key-value maps, dynamic options |
+| [`schemas/advanced-blocking-fork.json`](./schemas/advanced-blocking-fork.json) | Component | References existing component |
+| [`AutoReverseDns/ui-schema.json`](./AutoReverseDns/ui-schema.json) | Full | Complete production example |
 
-#### 2. Component Reference (For Complex Apps)
+### Available Field Types
 
-Reference an existing TechniLux component for apps with complex UIs:
+`switch` | `number` | `text` | `textarea` | `select` | `list` | `urlList` | `keyValue` | `objectArray` | `table` | `tabs` | `clientSelector` | `group`
 
-```json
-{
-  "version": "1.0",
-  "appName": "My Advanced Blocking Fork",
-  "description": "Fork of Advanced Blocking with custom features",
-  "component": "AdvancedBlockingConfig"
-}
-```
+### Available Components (for complex UIs)
 
-This reuses the existing Advanced Blocking visual editor without rebuilding TechniLux.
-
-### Available Components
-
-| Component | Description |
-|-----------|-------------|
-| `AdvancedBlockingConfig` | Group-based blocking with client targeting |
-| `AdvancedForwardingConfig` | Group-based forwarding with domains/networks |
-| `BlockPageConfig` | Custom block page HTML/settings |
-| `Dns64Config` | DNS64 prefix and exclusions |
-| `FailoverConfig` | Failover zones and health checks |
-| `SplitHorizonConfig` | Split-horizon DNS resolution |
-| `ZoneAliasConfig` | Zone aliases for internal/external views |
-| `LogExporterConfig` | Syslog/file log export settings |
-| `QueryLogsMySqlConfig` | MySQL query logging configuration |
-| `QueryLogsSqliteConfig` | SQLite query logging configuration |
-
-### Field Types
-
-| Type | Description |
-|------|-------------|
-| `switch` | Boolean toggle |
-| `number` | Numeric input with min/max/step |
-| `text` | Single-line text input |
-| `textarea` | Multi-line text input |
-| `select` | Dropdown with options |
-| `list` | String array (add/remove items) |
-| `urlList` | URL list with per-item overrides |
-| `keyValue` | Key-value map with nested schema |
-| `objectArray` | Array of complex objects |
-| `table` | Read-only table display |
-| `tabs` | Tabbed interface for object arrays |
-| `clientSelector` | Network device selector |
-| `group` | Nested field group |
-
-### Conditional Visibility
-
-Fields can be shown/hidden based on other field values:
-
-```json
-{
-  "id": "customEndpoint",
-  "path": "customEndpoint",
-  "type": "text",
-  "label": "Custom Endpoint URL",
-  "showIf": {
-    "field": "useCustomEndpoint",
-    "operator": "eq",
-    "value": true
-  }
-}
-```
-
-Operators: `eq`, `neq`, `contains`, `notEmpty`, `empty`
-
-### Adding Schema to Your App
-
-1. Create `ui-schema.json` in your app directory
-2. Add `schemaUrl` to `appstore.json`:
-
-```json
-{
-  "apps": [
-    {
-      "name": "My App",
-      "version": "1.0.0",
-      "description": "Description",
-      "downloadUrl": "https://github.com/.../MyApp.zip",
-      "schemaUrl": "https://raw.githubusercontent.com/.../ui-schema.json"
-    }
-  ]
-}
-```
-
-### Example: AutoReverseDns Schema
-
-See [`AutoReverseDns/ui-schema.json`](./AutoReverseDns/ui-schema.json) for a complete example with:
-- Switch toggles
-- Number inputs with suffixes
-- String lists
-- Key-value maps with nested objects
+`AdvancedBlockingConfig` | `AdvancedForwardingConfig` | `BlockPageConfig` | `Dns64Config` | `FailoverConfig` | `SplitHorizonConfig` | `ZoneAliasConfig` | `LogExporterConfig` | `QueryLogsMySqlConfig` | `QueryLogsSqliteConfig` | `DnsRebindingProtectionConfig` | `DropRequestsConfig` | `FilterAaaaConfig` | `MispConnectorConfig` | `NoDataConfig` | `NxDomainConfig` | `NxDomainOverrideConfig`
 
 ## Contributing
 

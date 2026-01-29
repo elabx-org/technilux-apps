@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "appName": "No Data",
+  "description": "Returns NO DATA response for specified DNS record types",
+  "sections": [
+    {
+      "id": "config",
+      "title": "Blocked Record Types",
+      "description": "DNS query types that will receive NO DATA responses",
+      "fields": [
+        {
+          "id": "blockedTypes",
+          "path": "blockedTypes",
+          "type": "list",
+          "label": "Record Types",
+          "description": "Add DNS record types to block (e.g., AAAA, ANY, TXT)",
+          "default": [],
+          "itemPlaceholder": "Enter record type (e.g., AAAA)"
+        }
+      ]
+    }
+  ]
+}

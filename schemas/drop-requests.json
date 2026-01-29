@@ -1,0 +1,136 @@
+{
+  "version": "1.0",
+  "appName": "Drop Requests",
+  "description": "Silently drops DNS requests matching specified criteria",
+  "sections": [
+    {
+      "id": "general",
+      "title": "General Settings",
+      "fields": [
+        {
+          "id": "enableBlocking",
+          "path": "enableBlocking",
+          "type": "switch",
+          "label": "Enable Blocking",
+          "description": "Enable or disable request dropping globally",
+          "default": true
+        },
+        {
+          "id": "dropMalformedRequests",
+          "path": "dropMalformedRequests",
+          "type": "switch",
+          "label": "Drop Malformed Requests",
+          "description": "Drop DNS requests that are malformed or invalid",
+          "default": false
+        }
+      ]
+    },
+    {
+      "id": "networks",
+      "title": "Network Filtering",
+      "description": "Control which client networks are allowed or blocked",
+      "fields": [
+        {
+          "id": "allowedNetworks",
+          "path": "allowedNetworks",
+          "type": "list",
+          "label": "Allowed Networks",
+          "description": "Networks that are always allowed (bypass blocking)",
+          "default": [],
+          "itemPlaceholder": "Enter CIDR (e.g., 10.0.0.0/8)"
+        },
+        {
+          "id": "blockedNetworks",
+          "path": "blockedNetworks",
+          "type": "list",
+          "label": "Blocked Networks",
+          "description": "Networks whose requests will be dropped",
+          "default": [],
+          "itemPlaceholder": "Enter CIDR (e.g., 192.168.1.0/24)"
+        }
+      ]
+    },
+    {
+      "id": "questions",
+      "title": "Blocked Questions",
+      "description": "Specific DNS queries to drop",
+      "fields": [
+        {
+          "id": "blockedQuestions",
+          "path": "blockedQuestions",
+          "type": "objectArray",
+          "label": "Blocked DNS Questions",
+          "addLabel": "Question",
+          "emptyMessage": "No blocked questions configured",
+          "columns": [
+            {
+              "id": "name",
+              "label": "Domain",
+              "path": "name",
+              "width": "40%"
+            },
+            {
+              "id": "type",
+              "label": "Type",
+              "path": "type",
+              "type": "badge",
+              "width": "20%"
+            },
+            {
+              "id": "blockZone",
+              "label": "Block Zone",
+              "path": "blockZone",
+              "type": "switch",
+              "width": "20%"
+            }
+          ],
+          "rowActions": [
+            { "id": "edit", "icon": "edit", "label": "Edit" },
+            { "id": "delete", "icon": "delete", "label": "Delete", "variant": "destructive" }
+          ],
+          "itemSchema": {
+            "fields": [
+              {
+                "id": "name",
+                "path": "name",
+                "type": "text",
+                "label": "Domain Name",
+                "description": "Domain name to match (supports wildcards)",
+                "placeholder": "*.ads.example.com"
+              },
+              {
+                "id": "type",
+                "path": "type",
+                "type": "select",
+                "label": "Record Type",
+                "description": "DNS record type to match (leave empty for all types)",
+                "options": [
+                  { "value": "", "label": "Any Type" },
+                  { "value": "A", "label": "A" },
+                  { "value": "AAAA", "label": "AAAA" },
+                  { "value": "ANY", "label": "ANY" },
+                  { "value": "MX", "label": "MX" },
+                  { "value": "TXT", "label": "TXT" },
+                  { "value": "CNAME", "label": "CNAME" },
+                  { "value": "NS", "label": "NS" },
+                  { "value": "SOA", "label": "SOA" },
+                  { "value": "SRV", "label": "SRV" },
+                  { "value": "CAA", "label": "CAA" },
+                  { "value": "PTR", "label": "PTR" }
+                ]
+              },
+              {
+                "id": "blockZone",
+                "path": "blockZone",
+                "type": "switch",
+                "label": "Block Entire Zone",
+                "description": "Block all queries under this zone (not just the exact domain)",
+                "default": false
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
