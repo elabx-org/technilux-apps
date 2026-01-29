@@ -2,6 +2,7 @@
 bin/
 obj/
 build/
+libs/
 *.zip
 
 ## User-specific files
