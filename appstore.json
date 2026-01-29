@@ -44,6 +44,7 @@
       "url": "https://github.com/elabx-org/technilux-apps",
       "size": "15 KB",
       "downloadUrl": "https://github.com/elabx-org/technilux-apps/releases/download/v1.0.0-autoreversedns/AutoReverseDns.zip",
+      "schemaUrl": "https://raw.githubusercontent.com/elabx-org/technilux-apps/main/AutoReverseDns/ui-schema.json",
       "category": "Zone Management",
       "tags": ["ptr", "reverse-dns", "automation", "zones", "arpa"]
     }
