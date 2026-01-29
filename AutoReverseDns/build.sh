@@ -37,7 +37,7 @@ mkdir -p "$OUTPUT_DIR"
 
 cp "bin/Release/net9.0/$APP_NAME.dll" "$OUTPUT_DIR/"
 cp "bin/Release/net9.0/$APP_NAME.deps.json" "$OUTPUT_DIR/"
-cp dnsApp.config "$OUTPUT_DIR/"
+cp dnsApps.config "$OUTPUT_DIR/"
 
 cd "$OUTPUT_DIR"
 zip -j "../$APP_NAME.zip" ./*

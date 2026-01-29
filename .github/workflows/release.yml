@@ -112,7 +112,7 @@ jobs:
           mkdir -p "$OUTPUT_DIR"
           cp bin/Release/net9.0/AutoReverseDns.dll "$OUTPUT_DIR/"
           cp bin/Release/net9.0/AutoReverseDns.deps.json "$OUTPUT_DIR/"
-          cp dnsApp.config "$OUTPUT_DIR/"
+          cp dnsApps.config "$OUTPUT_DIR/"
 
           cd "$OUTPUT_DIR"
           zip -j ../AutoReverseDns.zip ./*
